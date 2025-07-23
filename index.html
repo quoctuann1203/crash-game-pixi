@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PixiJS Crash Game</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      canvas {
+        display: block;
+      }
+      #ui {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        font-family: sans-serif;
+        text-align: center;
+      }
+      input,
+      button {
+        padding: 8px 12px;
+        margin: 5px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: none;
+      }
+      input {
+        width: 100px;
+        text-align: center;
+      }
+      button {
+        cursor: pointer;
+      }
+      #cashout {
+        background: #ff4444;
+        color: white;
+        display: none;
+      }
+      #start {
+        background: #00cc66;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui">
+      <div>
+        Bet:
+        <input
+          type="number"
+          id="bet"
+          placeholder="1000 $"
+          value="1000"
+          min="1000" />
+        <button id="start">Start</button>
+        <button id="cashout">Cash Out</button>
+      </div>
+      <h1 id="multiplier">Multiplier: 1.00x</h1>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
