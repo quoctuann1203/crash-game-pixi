@@ -3,66 +3,61 @@
   <head>
     <meta charset="UTF-8" />
     <title>PixiJS Crash Game</title>
+    <script type="module" src="./src/main.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/public/style.css" />
     <style>
       body {
         margin: 0;
-        overflow: hidden;
-        background: #111;
-      }
-      canvas {
-        display: block;
-      }
-      #ui {
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: white;
         font-family: sans-serif;
-        text-align: center;
-      }
-      input,
-      button {
-        padding: 8px 12px;
-        margin: 5px;
-        font-size: 16px;
-        border-radius: 5px;
-        border: none;
-      }
-      input {
-        width: 100px;
-        text-align: center;
-      }
-      button {
-        cursor: pointer;
-      }
-      #cashout {
-        background: #ff4444;
-        color: white;
-        display: none;
-      }
-      #start {
-        background: #00cc66;
-        color: white;
+        background-color: #0f172a;
       }
     </style>
   </head>
-  <body>
-    <div id="ui">
-      <div>
-        Bet:
-        <input
-          type="number"
-          id="bet"
-          placeholder="1000 $"
-          value="1000"
-          min="1000" />
-        <button id="start">Start</button>
-        <button id="cashout">Cash Out</button>
+  <body class="flex h-screen text-white">
+    <div class="w-80 bg-slate-800 p-4 flex flex-col gap-4">
+      <div
+        id="start-screen"
+        class="fixed inset-0 bg-black flex items-center justify-center z-50">
+        <button
+          id="start-btn"
+          class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-xl">
+          Start Game
+        </button>
       </div>
-      <h1 id="multiplier">Multiplier: 1.00x</h1>
-    </div>
 
-    <script type="module" src="./src/main.js"></script>
+      <h2 class="text-xl font-bold">🚀 Crash Game</h2>
+      <input
+        id="nickname"
+        class="p-2 rounded text-black"
+        placeholder="Nickname" />
+      <input
+        id="bet"
+        type="number"
+        class="p-2 rounded text-black"
+        placeholder="Bet ($)" />
+      <input
+        id="auto-cashout"
+        type="number"
+        class="p-2 rounded text-black"
+        placeholder="Auto Cashout x" />
+      <p id="multiplier" class="text-lg font-mono">Multiplier: 1.00x</p>
+      <button
+        id="cashout"
+        class="bg-yellow-500 rounded p-2 font-bold text-black disabled:opacity-50"
+        disabled>
+        💸 Cash Out
+      </button>
+      <p id="countdown" class="text-sm text-gray-300">Next round in: 10s</p>
+      <div>
+        <h3 class="font-bold mb-1">🏆 Leaderboard</h3>
+        <ul id="leaderboard-list" class="text-sm flex flex-col gap-1"></ul>
+      </div>
+      <div>
+        <h3 class="font-bold mt-4 mb-1">📈 History</h3>
+        <div id="history" class="flex flex-wrap gap-1 text-sm"></div>
+      </div>
+    </div>
+    <div id="canvas-container" class="flex-1"></div>
   </body>
 </html>
