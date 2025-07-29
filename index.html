@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>PixiJS Crash Game</title>
+    <title>🚀 Crash Game</title>
     <script type="module" src="./src/main.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -12,17 +12,20 @@
         font-family: sans-serif;
       }
     </style>
+    <link rel="stylesheet" href="./public/style.css" />
   </head>
   <body class="flex h-screen text-white">
     <!-- Start Screen -->
     <div
       id="start-screen"
-      class="fixed inset-0 bg-black flex items-center justify-center z-50">
-      <button
-        id="start-btn"
-        class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-xl">
-        Start Game
-      </button>
+      class="fixed inset-0 flex flex-col items-center justify-center z-50 bg-cover bg-center"
+      style="
+        background-image: url(./public/assets/airplane-flying-through-fantasy-world-with-mythical-landscape.jpg);
+      ">
+      <!-- Game Title with 3D Effect -->
+      <h1 class="game-title mb-6">🚀 Crash Game</h1>
+
+      <button id="start-btn" class="start-btn">Start Game</button>
     </div>
 
     <!-- Sidebar -->

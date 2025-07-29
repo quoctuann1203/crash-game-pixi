@@ -34,9 +34,7 @@ await app.init({
 document.getElementById("canvas-container").appendChild(app.canvas);
 
 // Background
-const bgTexture = await Assets.load(
-  "https://cdn.dribbble.com/userupload/12335909/file/original-66185e72722001cc894b7ade7fc5e04a.png"
-);
+const bgTexture = await Assets.load("../public/assets/background-univer.jpg");
 const background = new Sprite(bgTexture);
 background.width = app.screen.width;
 background.height = app.screen.height;
@@ -56,13 +54,23 @@ rocket.animationSpeed = 0.5;
 rocket.visible = false;
 app.stage.addChild(rocket);
 
-// Explosion placeholder
-const fireTexture = await Assets.load("https://pixijs.com/assets/bunny.png");
-const planeFire = new Sprite(fireTexture);
-planeFire.anchor.set(0.5);
-planeFire.scale.set(0.1);
-planeFire.visible = false;
-app.stage.addChild(planeFire);
+// Load explosion spritesheet
+await Assets.load("https://pixijs.com/assets/spritesheet/mc.json");
+
+const explosionFrames = [];
+for (let i = 0; i < 26; i++) {
+  // assuming explosion has 26 frames
+  const num = i < 10 ? `0${i}` : i;
+  explosionFrames.push(Texture.from(`Explosion_Sequence_A ${i + 1}.png`));
+}
+
+const explosion = new AnimatedSprite(explosionFrames);
+explosion.anchor.set(0.5);
+explosion.scale.set(1.2);
+explosion.animationSpeed = 0.4;
+explosion.loop = false;
+explosion.visible = false;
+app.stage.addChild(explosion);
 
 // Curve graphics
 const graphics = new Graphics();
@@ -106,10 +114,10 @@ function generateCrashMultiplier() {
 
 function startRound() {
   bet = parseFloat(betInput.value) || 0;
-  if (bet <= 0) {
-    countdownEl.textContent = "⚠️ Bet must be > 0!";
-    return;
-  }
+  // if (bet <= 0) {
+  //   countdownEl.textContent = "⚠️ Bet must be > 0!";
+  //   return;
+  // }
 
   state = "running";
   cashoutBtn.disabled = false;
@@ -125,8 +133,6 @@ function startRound() {
   rocket.y = app.screen.height / 2;
   rocket.play();
 
-  planeFire.visible = false;
-
   // Clear particles on new round start
   particles.length = 0;
   particleContainer.removeChildren();
@@ -139,7 +145,6 @@ function endRound() {
     curvePoints = [];
     rocket.visible = false;
     rocket.stop();
-    planeFire.visible = false;
     graphics.clear();
     // Clear particles on round end
     particles.length = 0;
@@ -158,7 +163,6 @@ cashoutBtn.onclick = () => {
   )}x = $${winnings.toFixed(2)}`;
 
   rocket.visible = false;
-  planeFire.visible = false;
 
   addMultiplierToHistory(multiplier);
   cashoutBtn.disabled = true;
@@ -262,10 +266,17 @@ function updateGameLoop() {
     state = "crashed";
     multiplierDisplay.textContent = `💥 Crashed at ${multiplier.toFixed(2)}x!`;
 
+    // Hide rocket & show explosion
     rocket.visible = false;
-    planeFire.visible = true;
-    planeFire.x = rocket.x;
-    planeFire.y = rocket.y;
+    explosion.x = rocket.x;
+    explosion.y = rocket.y;
+    explosion.visible = true;
+    explosion.gotoAndPlay(0);
+
+    // Hide explosion after it finishes
+    explosion.onComplete = () => {
+      explosion.visible = false;
+    };
 
     addMultiplierToHistory(multiplier);
     endRound();
