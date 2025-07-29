@@ -1,23 +1,31 @@
-import { Application, Graphics, Sprite, Assets } from "pixi.js";
+import {
+  Application,
+  Assets,
+  Graphics,
+  Sprite,
+  Texture,
+  AnimatedSprite,
+  Container,
+  ParticleContainer,
+} from "pixi.js";
 
-// UI Elements
+// UI
 const multiplierDisplay = document.getElementById("multiplier");
 const betInput = document.getElementById("bet");
-const nicknameInput = document.getElementById("nickname");
 const countdownEl = document.getElementById("countdown");
-const leaderboardList = document.getElementById("leaderboard-list");
 const cashoutBtn = document.getElementById("cashout");
 const autoCashOutInput = document.getElementById("auto-cashout");
 
 const startScreen = document.getElementById("start-screen");
 const startBtn = document.getElementById("start-btn");
 
-startBtn.addEventListener("click", () => {
-  startScreen.style.display = "none"; // Hide start screen
-  startCountdown(); // Start the game countdown
-});
+// Start Game Button
+startBtn.onclick = () => {
+  startScreen.style.display = "none";
+  startCountdown();
+};
 
-// PIXI App
+// Init PIXI App
 const app = new Application();
 await app.init({
   resizeTo: document.getElementById("canvas-container"),
@@ -25,7 +33,7 @@ await app.init({
 });
 document.getElementById("canvas-container").appendChild(app.canvas);
 
-// === Load Background ===
+// Background
 const bgTexture = await Assets.load(
   "https://cdn.dribbble.com/userupload/12335909/file/original-66185e72722001cc894b7ade7fc5e04a.png"
 );
@@ -34,94 +42,48 @@ background.width = app.screen.width;
 background.height = app.screen.height;
 app.stage.addChild(background);
 
-// === Load Plane ===
-const planeTexture = await Assets.load("https://pixijs.com/assets/bunny.png"); // replace with plane image
-const plane = new Sprite(planeTexture);
-plane.anchor.set(0.5);
-plane.scale.set(0.1);
-plane.visible = false;
-app.stage.addChild(plane);
+// Fighter Rocket Animation from spritesheet
+await Assets.load("https://pixijs.com/assets/spritesheet/fighter.json");
+const rocketFrames = [];
+for (let i = 0; i < 30; i++) {
+  const num = i < 10 ? `0${i}` : i;
+  rocketFrames.push(Texture.from(`rollSequence00${num}.png`));
+}
+const rocket = new AnimatedSprite(rocketFrames);
+rocket.anchor.set(0.5);
+rocket.scale.set(0.5);
+rocket.animationSpeed = 0.5;
+rocket.visible = false;
+app.stage.addChild(rocket);
 
-// === Load Plane Explosion ===
-const fireTexture = await Assets.load("https://pixijs.com/assets/bunny.png"); // replace with explosion image
+// Explosion placeholder
+const fireTexture = await Assets.load("https://pixijs.com/assets/bunny.png");
 const planeFire = new Sprite(fireTexture);
 planeFire.anchor.set(0.5);
 planeFire.scale.set(0.1);
 planeFire.visible = false;
 app.stage.addChild(planeFire);
 
-// === Draw Curve
+// Curve graphics
 const graphics = new Graphics();
 app.stage.addChild(graphics);
 
-// Game State Variables
+// Particle container for rocket trail particles
+const particleContainer = new Container();
+app.stage.addChild(particleContainer);
+
+// State
 let state = "waiting";
 let multiplier = 1;
 let crashPoint = 0;
 let startTime = 0;
 let bet = 0;
 let curvePoints = [];
-let leaderboard = [];
 let countdown = 10;
-let roundTimer;
+let roundTimer = null;
 
-function getRandomAvatarUrl() {
-  const id = Math.floor(Math.random() * 70) + 1;
-  return `https://i.pravatar.cc/40?img=${id}`;
-}
-
-function startRound() {
-  if (!nicknameInput.value) {
-    countdownEl.textContent = "⚠️ Please enter your nickname!";
-    return;
-  }
-
-  bet = parseFloat(betInput.value) || 0;
-  if (bet <= 0) {
-    countdownEl.textContent = "⚠️ Bet must be > 0!";
-    return;
-  }
-
-  state = "running";
-  cashoutBtn.disabled = false;
-  multiplier = 1;
-  crashPoint = Math.min(30, Math.max(1.01, -Math.log(Math.random()) * 2));
-  startTime = performance.now();
-  curvePoints = [{ x: 0, y: app.screen.height / 2 }];
-
-  graphics.clear();
-  plane.visible = true;
-  planeFire.visible = false;
-
-  console.log("🎮 Game started. Crash at:", crashPoint.toFixed(2));
-}
-
-function endRound() {
-  setTimeout(() => {
-    state = "waiting";
-    multiplier = 1;
-    curvePoints = [];
-    plane.visible = false;
-    planeFire.visible = false;
-    graphics.clear();
-
-    startCountdown(); // Start next round countdown
-  }, 2000);
-}
-
-function updateLeaderboard() {
-  leaderboardList.innerHTML = leaderboard
-    .slice(0, 10)
-    .map(
-      (entry, index) =>
-        `<li class="flex items-center gap-2">
-          <img src="${entry.avatar}" class="w-6 h-6 rounded-full" />
-          <span>${entry.name}</span>
-          <span class="ml-auto font-bold text-yellow-300">$${entry.score.toFixed(0)}</span>
-        </li>`
-    )
-    .join("");
-}
+// Rocket trail particles array
+const particles = [];
 
 function addMultiplierToHistory(mult) {
   const historyEl = document.getElementById("history");
@@ -135,108 +97,199 @@ function addMultiplierToHistory(mult) {
     historyEl.removeChild(historyEl.lastChild);
 }
 
-cashoutBtn.onclick = () => {
-  if (state !== "running") return;
+function generateCrashMultiplier() {
+  const fairness = 3;
+  const r = Math.random();
+  const crash = Math.max(1.2, 1 + Math.pow(r, fairness) * 29);
+  return crash;
+}
 
-  state = "cashed";
-  const winnings = bet * multiplier;
+function startRound() {
+  bet = parseFloat(betInput.value) || 0;
+  if (bet <= 0) {
+    countdownEl.textContent = "⚠️ Bet must be > 0!";
+    return;
+  }
 
-  multiplierDisplay.textContent = `💰 Cashed out at ${multiplier.toFixed(2)}x = $${winnings.toFixed(2)}`;
+  state = "running";
+  cashoutBtn.disabled = false;
+  multiplier = 1;
+  crashPoint = generateCrashMultiplier();
+  startTime = performance.now();
+  curvePoints = [{ x: 0, y: app.screen.height }];
 
-  plane.visible = false;
+  graphics.clear();
+
+  rocket.visible = true;
+  rocket.x = 0;
+  rocket.y = app.screen.height / 2;
+  rocket.play();
+
   planeFire.visible = false;
 
-  leaderboard.push({
-    name: nicknameInput.value,
-    avatar: getRandomAvatarUrl(),
-    score: winnings,
-  });
-  leaderboard.sort((a, b) => b.score - a.score);
-  updateLeaderboard();
+  // Clear particles on new round start
+  particles.length = 0;
+  particleContainer.removeChildren();
+}
+
+function endRound() {
+  setTimeout(() => {
+    state = "waiting";
+    multiplier = 1;
+    curvePoints = [];
+    rocket.visible = false;
+    rocket.stop();
+    planeFire.visible = false;
+    graphics.clear();
+    // Clear particles on round end
+    particles.length = 0;
+    particleContainer.removeChildren();
+    startCountdown();
+  }, 2000);
+}
+
+cashoutBtn.onclick = () => {
+  if (state !== "running") return;
+  state = "cashed";
+
+  const winnings = bet * multiplier;
+  multiplierDisplay.textContent = `💰 Cashed at ${multiplier.toFixed(
+    2
+  )}x = $${winnings.toFixed(2)}`;
+
+  rocket.visible = false;
+  planeFire.visible = false;
+
   addMultiplierToHistory(multiplier);
   cashoutBtn.disabled = true;
   endRound();
 };
 
-function updatePlane() {
-  if (state !== "running") return;
-
-  const last = curvePoints[curvePoints.length - 1];
-  const prev = curvePoints[curvePoints.length - 2] || last;
-
-  plane.x = last.x;
-  plane.y = last.y;
-  plane.rotation = Math.atan2(last.y - prev.y, last.x - prev.x);
-}
-
-function drawCurve() {
-  graphics.clear();
-  graphics.lineStyle({ width: 2, color: 0x00ff00 });
-  graphics.moveTo(curvePoints[0].x, curvePoints[0].y);
-  for (let i = 1; i < curvePoints.length; i++) {
-    graphics.lineTo(curvePoints[i].x, curvePoints[i].y);
-  }
-
-  const last = curvePoints[curvePoints.length - 1];
-  graphics.beginFill(0xffff00);
-  graphics.drawCircle(last.x, last.y, 8);
-  graphics.endFill();
-}
-
 function checkAutoCashOut() {
-  const autoValue = parseFloat(autoCashOutInput.value);
-  if (!isNaN(autoValue) && multiplier >= autoValue && state === "running") {
+  const auto = parseFloat(autoCashOutInput.value);
+  if (!isNaN(auto) && multiplier >= auto && state === "running") {
     cashoutBtn.click();
   }
 }
 
-function updateGameLoop() {
-  if (state === "running") {
-    const elapsed = (performance.now() - startTime) / 1000;
-    multiplier = Math.min(30, Math.pow(1.03, elapsed * 10));
-    multiplierDisplay.textContent = `Multiplier: ${multiplier.toFixed(2)}x`;
+function drawCurve() {
+  graphics.clear();
 
-    const last = curvePoints[curvePoints.length - 1];
-    const newX = last.x + 2;
-    const newY = app.screen.height / 2 - Math.pow(newX, 1.2) / 60;
-    curvePoints.push({ x: newX, y: newY });
+  if (curvePoints.length === 0) return;
 
-    if (multiplier >= crashPoint || newX > app.screen.width) {
-      state = "crashed";
-      multiplierDisplay.textContent = `💥 Crashed at ${multiplier.toFixed(2)}x!`;
+  // Start a new path explicitly
+  graphics.lineStyle(4, 0x00ff00, 0.8);
+  graphics.moveTo(curvePoints[0].x, curvePoints[0].y);
 
-      plane.visible = false;
-      planeFire.visible = true;
-      planeFire.x = plane.x;
-      planeFire.y = plane.y;
+  graphics.beginFill(0x00ff00, 0); // color doesn't matter, alpha = 0 makes it invisible
+  graphics.lineStyle(4, 0x00ff00, 0.8);
+  graphics.moveTo(curvePoints[0].x, curvePoints[0].y);
 
-      leaderboard.push({
-        name: nicknameInput.value,
-        avatar: getRandomAvatarUrl(),
-        score: 0,
-      });
-      updateLeaderboard();
-      addMultiplierToHistory(multiplier);
-
-      endRound();
-      return;
-    }
-
-    checkAutoCashOut();
-    drawCurve();
-    updatePlane();
+  for (let i = 1; i < curvePoints.length; i++) {
+    graphics.lineTo(curvePoints[i].x, curvePoints[i].y);
   }
+
+  graphics.endFill(); // closes the path, but it's fully transparent
+}
+
+// Rocket trail particle system
+function emitParticle() {
+  const particle = new Graphics();
+  const size = 3 + Math.random() * 2;
+  particle.beginFill(0xffaa00, 0.7);
+  particle.drawCircle(0, 0, size);
+  particle.endFill();
+  particle.x = rocket.x - rocket.width / 2; // behind rocket
+  particle.y = rocket.y + (Math.random() * 10 - 5); // jitter Y a bit
+  particle.alpha = 1;
+  particle.scale.set(1);
+  particleContainer.addChild(particle);
+
+  particles.push({
+    gfx: particle,
+    life: 30 + Math.random() * 20, // frames
+    vx: -1 - Math.random() * 1, // move left
+    vy: (Math.random() - 0.5) * 0.5,
+  });
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life--;
+    if (p.life <= 0) {
+      particleContainer.removeChild(p.gfx);
+      particles.splice(i, 1);
+      continue;
+    }
+    // Move particle
+    p.gfx.x += p.vx;
+    p.gfx.y += p.vy;
+    // Fade out
+    p.gfx.alpha = p.life / 50;
+    // Shrink
+    p.gfx.scale.set(p.gfx.alpha);
+  }
+}
+
+function updateRocket() {
+  const last = curvePoints[curvePoints.length - 1];
+  const prev = curvePoints[curvePoints.length - 2] || last;
+
+  rocket.x = last.x;
+  rocket.y = last.y;
+  rocket.rotation = Math.atan2(last.y - prev.y, last.x - prev.x);
+}
+
+function updateGameLoop() {
+  if (state !== "running") return;
+
+  const elapsed = (performance.now() - startTime) / 1000;
+  multiplier = Math.min(30, Math.pow(1.03, elapsed * 10));
+  multiplierDisplay.textContent = `Multiplier: ${multiplier.toFixed(2)}x`;
+
+  const last = curvePoints[curvePoints.length - 1];
+  const newX = last.x + 2;
+
+  // Parabola mapped from bottom-left to top-right
+  const progress = newX / app.screen.width; // 0 to 1
+  // const newY = app.screen.height * (1 - Math.pow(progress, 4));
+  const newY = app.screen.height - Math.pow(progress, 2) * app.screen.height;
+
+  curvePoints.push({ x: newX, y: newY });
+
+  if (multiplier >= crashPoint || newX > app.screen.width) {
+    state = "crashed";
+    multiplierDisplay.textContent = `💥 Crashed at ${multiplier.toFixed(2)}x!`;
+
+    rocket.visible = false;
+    planeFire.visible = true;
+    planeFire.x = rocket.x;
+    planeFire.y = rocket.y;
+
+    addMultiplierToHistory(multiplier);
+    endRound();
+    return;
+  }
+
+  checkAutoCashOut();
+  drawCurve();
+  updateRocket();
+
+  // Emit rocket trail particles each frame (limit rate)
+  if (Math.random() < 0.6) {
+    emitParticle();
+  }
+  updateParticles();
 }
 
 function startCountdown() {
   clearInterval(roundTimer);
-  countdown = 10;
+  countdown = 5;
   countdownEl.textContent = `⏳ Next round in: ${countdown}s`;
-
   roundTimer = setInterval(() => {
     countdown--;
     countdownEl.textContent = `⏳ Next round in: ${countdown}s`;
-
     if (countdown <= 0) {
       clearInterval(roundTimer);
       startRound();
@@ -244,5 +297,5 @@ function startCountdown() {
   }, 1000);
 }
 
+// Start game loop
 app.ticker.add(updateGameLoop);
-startCountdown();
