@@ -32,7 +32,7 @@
     <div class="w-80 bg-slate-800 p-4 flex flex-col gap-4">
       <h2 class="text-xl font-bold">🚀 Crash Game</h2>
 
-      <input
+      <!-- <input
         id="bet"
         type="number"
         class="p-2 rounded text-black"
@@ -42,7 +42,7 @@
         id="auto-cashout"
         type="number"
         class="p-2 rounded text-black"
-        placeholder="Auto Cashout x" />
+        placeholder="Auto Cashout x" /> -->
 
       <p id="multiplier" class="text-lg font-mono">Multiplier: 1.00x</p>
 
@@ -58,6 +58,92 @@
       <div>
         <h3 class="font-bold mt-4 mb-1">📈 History</h3>
         <div id="history" class="flex flex-wrap gap-1 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- Modern Bet UI (bottom right) -->
+    <div
+      id="bet-ui"
+      class="absolute bottom-4 right-4 z-50 bg-slate-900 rounded-2xl p-4 shadow-xl flex flex-col gap-4">
+      <!-- Toggles Row -->
+      <div class="flex items-center justify-between gap-4">
+        <!-- Auto Play -->
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <div class="relative">
+            <input type="checkbox" id="auto-play-toggle" class="sr-only peer" />
+            <div
+              class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:bg-yellow-400 transition-all"></div>
+            <div
+              class="absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full transition-all peer-checked:translate-x-5"></div>
+          </div>
+          <span class="text-white">Auto Play</span>
+        </label>
+
+        <!-- Auto Cash Out -->
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <div class="relative">
+            <input
+              type="checkbox"
+              id="auto-cashout-toggle"
+              class="sr-only peer"
+              checked />
+            <div
+              class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:bg-yellow-400 transition-all"></div>
+            <div
+              class="absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full transition-all peer-checked:translate-x-5"></div>
+          </div>
+          <span class="text-white">Auto Cash Out</span>
+        </label>
+      </div>
+
+      <!-- Bet Controls -->
+      <div class="flex items-center justify-between gap-3">
+        <!-- Amount Control -->
+        <div
+          class="flex items-center bg-black rounded-full px-4 py-2 gap-3 text-white">
+          <button
+            id="decrease-bet"
+            class="text-yellow-400 text-2xl font-bold transform transition-transform duration-150 active:scale-90">
+            −
+          </button>
+          <span id="bet-amount" class="text-xl font-bold">$15</span>
+          <button
+            id="increase-bet"
+            class="text-yellow-400 text-2xl font-bold transform transition-transform duration-150 active:scale-90">
+            +
+          </button>
+        </div>
+
+        <!-- Bet Button -->
+        <button
+          id="place-bet"
+          class="bg-yellow-400 hover:bg-yellow-300 transition-colors px-5 py-2 rounded-lg font-bold text-black shadow-md transform active:scale-95">
+          Bet
+        </button>
+      </div>
+
+      <!-- Presets -->
+      <div class="flex justify-center gap-2">
+        <button
+          class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-full transition-all"
+          data-preset="1">
+          1
+        </button>
+        <button
+          class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-full transition-all"
+          data-preset="2">
+          2
+        </button>
+        <button
+          class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-full transition-all"
+          data-preset="5">
+          5
+        </button>
+        <button
+          class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-full transition-all"
+          data-preset="10">
+          10
+        </button>
       </div>
     </div>
 

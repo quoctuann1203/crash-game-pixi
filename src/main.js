@@ -11,17 +11,23 @@ import {
 
 // UI
 const multiplierDisplay = document.getElementById("multiplier");
-const betInput = document.getElementById("bet");
+// const betInput = document.getElementById("bet");
 const countdownEl = document.getElementById("countdown");
 const cashoutBtn = document.getElementById("cashout");
-const autoCashOutInput = document.getElementById("auto-cashout");
+// const autoCashOutInput = document.getElementById("auto-cashout");
+
+const betDisplay = document.getElementById("bet-amount");
+const autoCashOutToggle = document.getElementById("auto-cashout-toggle");
+const autoPlayToggle = document.getElementById("auto-play-toggle");
 
 const startScreen = document.getElementById("start-screen");
 const startBtn = document.getElementById("start-btn");
+const betUI = document.getElementById("bet-ui");
 
 // Start Game Button
 startBtn.onclick = () => {
   startScreen.style.display = "none";
+  betUI.style.display = "flex"; // Show the bet UI
   startCountdown();
 };
 
@@ -85,10 +91,33 @@ let state = "waiting";
 let multiplier = 1;
 let crashPoint = 0;
 let startTime = 0;
-let bet = 0;
+let bet = 15;
 let curvePoints = [];
 let countdown = 10;
 let roundTimer = null;
+
+document.getElementById("increase-bet").onclick = () => {
+  bet += 1;
+  betDisplay.textContent = `$${bet}`;
+};
+
+document.getElementById("decrease-bet").onclick = () => {
+  bet = Math.max(0, bet - 1);
+  betDisplay.textContent = `$${bet}`;
+};
+
+document.querySelectorAll("[data-preset]").forEach((btn) => {
+  btn.onclick = () => {
+    bet = parseInt(btn.dataset.preset);
+    betDisplay.textContent = `$${bet}`;
+  };
+});
+
+document.getElementById("place-bet").onclick = () => {
+  // Optional: trigger start screen manually or auto
+  startScreen.style.display = "none";
+  startCountdown();
+};
 
 // Rocket trail particles array
 const particles = [];
@@ -113,19 +142,16 @@ function generateCrashMultiplier() {
 }
 
 function startRound() {
-  bet = parseFloat(betInput.value) || 0;
-  // if (bet <= 0) {
-  //   countdownEl.textContent = "⚠️ Bet must be > 0!";
-  //   return;
-  // }
-
   state = "running";
+
+  // Disable Bet UI with dimming
+  betUI.classList.add("disabled");
+
   cashoutBtn.disabled = false;
   multiplier = 1;
   crashPoint = generateCrashMultiplier();
   startTime = performance.now();
   curvePoints = [{ x: 0, y: app.screen.height }];
-
   graphics.clear();
 
   rocket.visible = true;
@@ -133,7 +159,6 @@ function startRound() {
   rocket.y = app.screen.height / 2;
   rocket.play();
 
-  // Clear particles on new round start
   particles.length = 0;
   particleContainer.removeChildren();
 }
@@ -146,12 +171,24 @@ function endRound() {
     rocket.visible = false;
     rocket.stop();
     graphics.clear();
-    // Clear particles on round end
     particles.length = 0;
     particleContainer.removeChildren();
-    startCountdown();
+
+    const isAutoPlay = autoPlayToggle.checked;
+    if (isAutoPlay) {
+      placeBet();
+    } else {
+      startCountdown();
+    }
   }, 2000);
 }
+
+function placeBet() {
+  startScreen.style.display = "none";
+  startCountdown();
+}
+
+document.getElementById("place-bet").onclick = placeBet;
 
 cashoutBtn.onclick = () => {
   if (state !== "running") return;
@@ -170,8 +207,8 @@ cashoutBtn.onclick = () => {
 };
 
 function checkAutoCashOut() {
-  const auto = parseFloat(autoCashOutInput.value);
-  if (!isNaN(auto) && multiplier >= auto && state === "running") {
+  const isAutoCashoutEnabled = autoCashOutToggle.checked;
+  if (isAutoCashoutEnabled && multiplier >= 2.0 && state === "running") {
     cashoutBtn.click();
   }
 }
@@ -298,6 +335,10 @@ function startCountdown() {
   clearInterval(roundTimer);
   countdown = 5;
   countdownEl.textContent = `⏳ Next round in: ${countdown}s`;
+
+  // Show Bet UI with animation
+  betUI.classList.remove("hidden", "disabled");
+
   roundTimer = setInterval(() => {
     countdown--;
     countdownEl.textContent = `⏳ Next round in: ${countdown}s`;

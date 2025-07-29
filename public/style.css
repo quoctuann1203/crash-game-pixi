@@ -45,3 +45,17 @@ body {
     0 3px #064e3b,
     0 6px 10px rgba(0, 0, 0, 0.2);
 }
+
+#bet-ui {
+  display: none;
+}
+
+#bet-ui.hidden {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+#bet-ui.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
