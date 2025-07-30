@@ -12,7 +12,6 @@ import {
 // UI
 const multiplierDisplay = document.getElementById("multiplier");
 // const betInput = document.getElementById("bet");
-const countdownEl = document.getElementById("countdown");
 const cashoutBtn = document.getElementById("cashout");
 // const autoCashOutInput = document.getElementById("auto-cashout");
 
@@ -96,6 +95,13 @@ let curvePoints = [];
 let countdown = 10;
 let roundTimer = null;
 
+const multiplier3dEl = document
+  .getElementById("multiplier-3d")
+  .querySelector("p");
+
+// update 3d multiplier text
+multiplier3dEl.textContent = `${multiplier.toFixed(2)}x`;
+
 document.getElementById("increase-bet").onclick = () => {
   bet += 1;
   betDisplay.textContent = `$${bet}`;
@@ -144,8 +150,12 @@ function generateCrashMultiplier() {
 function startRound() {
   state = "running";
 
+  // Hide countdown big text, show multiplier big text
+  document.getElementById("big-countdown").classList.add("hidden");
+  document.getElementById("multiplier").classList.remove("hidden");
+
   // Disable Bet UI with dimming
-  betUI.classList.add("disabled");
+  // betUI.classList.add("disabled");
 
   cashoutBtn.disabled = false;
   multiplier = 1;
@@ -334,14 +344,20 @@ function updateGameLoop() {
 function startCountdown() {
   clearInterval(roundTimer);
   countdown = 5;
-  countdownEl.textContent = `⏳ Next round in: ${countdown}s`;
+
+  // Show countdown big text, hide multiplier big text
+  document.getElementById("big-countdown").classList.remove("hidden");
+  document.getElementById("multiplier").classList.add("hidden");
+
+  // Set initial countdown text
+  document.getElementById("big-countdown").textContent = countdown;
 
   // Show Bet UI with animation
-  betUI.classList.remove("hidden", "disabled");
+  // betUI.classList.remove("hidden", "disabled");
 
   roundTimer = setInterval(() => {
     countdown--;
-    countdownEl.textContent = `⏳ Next round in: ${countdown}s`;
+    document.getElementById("big-countdown").textContent = countdown;
     if (countdown <= 0) {
       clearInterval(roundTimer);
       startRound();
