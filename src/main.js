@@ -22,6 +22,8 @@ const autoPlayToggle = document.getElementById("auto-play-toggle");
 const startScreen = document.getElementById("start-screen");
 const startBtn = document.getElementById("start-btn");
 const betUI = document.getElementById("bet-ui");
+const betBtn = document.getElementById("place-bet");
+cashoutBtn.style.display = "none"; // hide cashout by default
 
 // Start Game Button
 startBtn.onclick = () => {
@@ -32,6 +34,7 @@ startBtn.onclick = () => {
 
 // Init PIXI App
 const app = new Application();
+globalThis.__PIXI_APP__ = app;
 await app.init({
   resizeTo: document.getElementById("canvas-container"),
   background: "#111111",
@@ -94,6 +97,7 @@ let bet = 15;
 let curvePoints = [];
 let countdown = 10;
 let roundTimer = null;
+let hasBetted = false;
 
 const multiplier3dEl = document
   .getElementById("multiplier-3d")
@@ -140,6 +144,19 @@ function addMultiplierToHistory(mult) {
     historyEl.removeChild(historyEl.lastChild);
 }
 
+function setCashoutState(enabled) {
+  cashoutBtn.disabled = !enabled;
+  cashoutBtn.style.opacity = enabled ? "1" : "0.5";
+  cashoutBtn.style.pointerEvents = enabled ? "auto" : "none"; // prevent clicks
+}
+
+function setBetButtonState(enabled, label = "Bet") {
+  betBtn.disabled = !enabled;
+  betBtn.style.opacity = enabled ? "1" : "0.5";
+  betBtn.style.pointerEvents = enabled ? "auto" : "none";
+  betBtn.textContent = label;
+}
+
 function generateCrashMultiplier() {
   const fairness = 3;
   const r = Math.random();
@@ -150,14 +167,16 @@ function generateCrashMultiplier() {
 function startRound() {
   state = "running";
 
-  // Hide countdown big text, show multiplier big text
+  // Swap buttons
+  betBtn.style.display = "none";
+  cashoutBtn.style.display = "block";
+
+  // Enable only if the user has placed a bet
+  setCashoutState(hasBetted);
+
   document.getElementById("big-countdown").classList.add("hidden");
   document.getElementById("multiplier").classList.remove("hidden");
 
-  // Disable Bet UI with dimming
-  // betUI.classList.add("disabled");
-
-  cashoutBtn.disabled = false;
   multiplier = 1;
   crashPoint = generateCrashMultiplier();
   startTime = performance.now();
@@ -184,6 +203,17 @@ function endRound() {
     particles.length = 0;
     particleContainer.removeChildren();
 
+    // Reset state
+    hasBetted = false;
+
+    // Restore Bet button to enabled & visible
+    betBtn.style.display = "block";
+    setBetButtonState(true, "Bet");
+
+    // Hide Cash Out & reset style
+    cashoutBtn.style.display = "none";
+    cashoutBtn.style.opacity = "0.5";
+
     const isAutoPlay = autoPlayToggle.checked;
     if (isAutoPlay) {
       placeBet();
@@ -194,6 +224,15 @@ function endRound() {
 }
 
 function placeBet() {
+  hasBetted = true;
+  console.log(`Bet placed: $${bet}`);
+
+  // Disable Bet button (make it dimmed & unclickable)
+  setBetButtonState(false, "Betted");
+
+  // Ensure Cash Out is disabled until round starts
+  setCashoutState(false);
+
   startScreen.style.display = "none";
   startCountdown();
 }
