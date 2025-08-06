@@ -98,6 +98,12 @@ let curvePoints = [];
 let countdown = 10;
 let roundTimer = null;
 let hasBetted = false;
+let userBalance = 1000;
+const userBalanceEl = document.getElementById("user-balance");
+
+function updateBalanceDisplay() {
+  userBalanceEl.textContent = `$${userBalance.toFixed(2)}`;
+}
 
 const multiplier3dEl = document
   .getElementById("multiplier-3d")
@@ -225,6 +231,8 @@ function endRound() {
 
 function placeBet() {
   hasBetted = true;
+  userBalance -= bet;
+  updateBalanceDisplay();
   console.log(`Bet placed: $${bet}`);
 
   // Disable Bet button (make it dimmed & unclickable)
@@ -244,9 +252,20 @@ cashoutBtn.onclick = () => {
   state = "cashed";
 
   const winnings = bet * multiplier;
+  userBalance += winnings;
+  updateBalanceDisplay();
   multiplierDisplay.textContent = `💰 Cashed at ${multiplier.toFixed(
     2
   )}x = $${winnings.toFixed(2)}`;
+
+  multiplierDisplay.style.color = "#FFD700"; // Gold color
+  multiplierDisplay.style.transform = "scale(1.5)";
+  multiplierDisplay.style.transition = "transform 0.5s ease, color 0.5s ease";
+
+  setTimeout(() => {
+    multiplierDisplay.style.transform = "scale(1)";
+    multiplierDisplay.style.color = "#ffffff";
+  }, 800);
 
   rocket.visible = false;
 
@@ -335,16 +354,16 @@ function updateGameLoop() {
   if (state !== "running") return;
 
   const elapsed = (performance.now() - startTime) / 1000;
-  multiplier = Math.min(30, Math.pow(1.03, elapsed * 10));
+  multiplier = Math.min(30, Math.pow(1.03, elapsed * 6));
   multiplierDisplay.textContent = `Multiplier: ${multiplier.toFixed(2)}x`;
 
   const last = curvePoints[curvePoints.length - 1];
-  const newX = last.x + 2;
+  const newX = last.x + 1;
 
   // Parabola mapped from bottom-left to top-right
   const progress = newX / app.screen.width; // 0 to 1
   // const newY = app.screen.height * (1 - Math.pow(progress, 4));
-  const newY = app.screen.height - Math.pow(progress, 2) * app.screen.height;
+  const newY = app.screen.height - Math.pow(progress, 1.6) * app.screen.height;
 
   curvePoints.push({ x: newX, y: newY });
 
