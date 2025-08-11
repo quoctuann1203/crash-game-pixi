@@ -100,6 +100,39 @@ explosion.loop = false;
 explosion.visible = false;
 app.stage.addChild(explosion);
 
+// Load coin texture once (you can use any PNG coin asset)
+const coinTexture = await Assets.load("../public/assets/coin.png");
+const coins = [];
+
+function spawnCoins(count = 100) {
+  for (let i = 0; i < count; i++) {
+    const coin = new Sprite(coinTexture);
+    coin.anchor.set(0.5);
+    coin.x = Math.random() * app.screen.width;
+    coin.y = -50; // start above the screen
+    coin.scale.set(0.2 + Math.random() * 0.1);
+    coin.rotation = Math.random() * Math.PI * 2;
+    coin.vy = 2 + Math.random() * 3; // falling speed
+    coin.vx = (Math.random() - 0.5) * 2; // horizontal drift
+    coin.vr = (Math.random() - 0.5) * 0.1; // rotation speed
+    coins.push(coin);
+    app.stage.addChild(coin);
+  }
+}
+
+function updateCoins() {
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    c.y += c.vy;
+    c.x += c.vx;
+    c.rotation += c.vr;
+    if (c.y > app.screen.height + 50) {
+      app.stage.removeChild(c);
+      coins.splice(i, 1);
+    }
+  }
+}
+
 // Curve graphics
 const graphics = new Graphics();
 app.stage.addChild(graphics);
@@ -267,18 +300,21 @@ function placeBet() {
 
 document.getElementById("place-bet").onclick = placeBet;
 
+function bumpBalanceAnimation() {
+  userBalanceEl.style.transition = "transform 0.3s ease";
+  userBalanceEl.style.transform = "scale(1.3)";
+  setTimeout(() => {
+    userBalanceEl.style.transform = "scale(1)";
+  }, 300);
+}
+
 cashoutBtn.onclick = () => {
   if (state !== "running") return;
   state = "cashed";
 
   const winnings = bet * multiplier;
-  userBalance += winnings;
-  updateBalanceDisplay();
-  multiplierDisplay.textContent = `💰 Cashed at ${multiplier.toFixed(
-    2
-  )}x = $${winnings.toFixed(2)}`;
-
-  multiplierDisplay.style.color = "#FFD700"; // Gold color
+  multiplierDisplay.textContent = `💰 Cashed at ${multiplier.toFixed(2)}x = $${winnings.toFixed(2)}`;
+  multiplierDisplay.style.color = "#FFD700";
   multiplierDisplay.style.transform = "scale(1.5)";
   multiplierDisplay.style.transition = "transform 0.5s ease, color 0.5s ease";
 
@@ -287,8 +323,14 @@ cashoutBtn.onclick = () => {
     multiplierDisplay.style.color = "#ffffff";
   }, 800);
 
-  rocket.visible = false;
+  // 🪙 Increase balance & animate
+  let currentBalance = parseFloat(userBalanceEl.textContent.replace("$", ""));
+  currentBalance += winnings;
+  userBalanceEl.textContent = `$${currentBalance.toFixed(2)}`;
+  bumpBalanceAnimation();
+  spawnCoins(25);
 
+  rocket.visible = false;
   addMultiplierToHistory(multiplier);
   cashoutBtn.disabled = true;
   endRound();
@@ -371,54 +413,42 @@ function updateRocket() {
 }
 
 function updateGameLoop() {
-  if (state !== "running") return;
+  if (state === "running") {
+    const elapsed = (performance.now() - startTime) / 1000;
+    multiplier = Math.min(30, Math.pow(1.03, elapsed * 6));
+    multiplierDisplay.textContent = `Multiplier: ${multiplier.toFixed(2)}x`;
 
-  const elapsed = (performance.now() - startTime) / 1000;
-  multiplier = Math.min(30, Math.pow(1.03, elapsed * 6));
-  multiplierDisplay.textContent = `Multiplier: ${multiplier.toFixed(2)}x`;
+    const last = curvePoints[curvePoints.length - 1];
+    const newX = last.x + 1;
+    const progress = newX / app.screen.width;
+    const newY =
+      app.screen.height - Math.pow(progress, 1.6) * app.screen.height;
 
-  const last = curvePoints[curvePoints.length - 1];
-  const newX = last.x + 1;
+    curvePoints.push({ x: newX, y: newY });
 
-  background.tilePosition.x -= 0.5; // scroll speed (adjust to your taste)
-
-  // Parabola mapped from bottom-left to top-right
-  const progress = newX / app.screen.width; // 0 to 1
-  // const newY = app.screen.height * (1 - Math.pow(progress, 4));
-  const newY = app.screen.height - Math.pow(progress, 1.6) * app.screen.height;
-
-  curvePoints.push({ x: newX, y: newY });
-
-  if (multiplier >= crashPoint || newX > app.screen.width) {
-    state = "crashed";
-    multiplierDisplay.textContent = `💥 Crashed at ${multiplier.toFixed(2)}x!`;
-
-    // Hide rocket & show explosion
-    rocket.visible = false;
-    explosion.x = rocket.x;
-    explosion.y = rocket.y;
-    explosion.visible = true;
-    explosion.gotoAndPlay(0);
-
-    // Hide explosion after it finishes
-    explosion.onComplete = () => {
-      explosion.visible = false;
-    };
-
-    addMultiplierToHistory(multiplier);
-    endRound();
-    return;
+    if (multiplier >= crashPoint || newX > app.screen.width) {
+      state = "crashed";
+      multiplierDisplay.textContent = `💥 Crashed at ${multiplier.toFixed(2)}x!`;
+      rocket.visible = false;
+      explosion.x = rocket.x;
+      explosion.y = rocket.y;
+      explosion.visible = true;
+      explosion.gotoAndPlay(0);
+      explosion.onComplete = () => {
+        explosion.visible = false;
+      };
+      addMultiplierToHistory(multiplier);
+      endRound();
+      return;
+    }
+    checkAutoCashOut();
+    drawCurve();
+    updateRocket();
+    if (Math.random() < 0.6) emitParticle();
+    updateParticles();
   }
 
-  checkAutoCashOut();
-  drawCurve();
-  updateRocket();
-
-  // Emit rocket trail particles each frame (limit rate)
-  if (Math.random() < 0.6) {
-    emitParticle();
-  }
-  updateParticles();
+  updateCoins(); // 🪙 keep coins falling
 }
 
 function startCountdown() {
