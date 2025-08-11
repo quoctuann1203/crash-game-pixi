@@ -7,6 +7,7 @@ import {
   AnimatedSprite,
   Container,
   ParticleContainer,
+  TilingSprite,
 } from "pixi.js";
 
 // UI
@@ -41,12 +42,31 @@ await app.init({
 });
 document.getElementById("canvas-container").appendChild(app.canvas);
 
-// Background
 const bgTexture = await Assets.load("../public/assets/background-univer.jpg");
-const background = new Sprite(bgTexture);
-background.width = app.screen.width;
-background.height = app.screen.height;
+
+const background = new TilingSprite(
+  bgTexture,
+  app.screen.width,
+  app.screen.height
+);
+
+// Scale the texture to fill canvas regardless of original image size
+background.tileScale.set(
+  app.screen.width / bgTexture.width,
+  app.screen.height / bgTexture.height
+);
+
 app.stage.addChild(background);
+
+// Handle resize
+window.addEventListener("resize", () => {
+  background.width = app.screen.width;
+  background.height = app.screen.height;
+  background.tileScale.set(
+    app.screen.width / bgTexture.width,
+    app.screen.height / bgTexture.height
+  );
+});
 
 // Fighter Rocket Animation from spritesheet
 await Assets.load("https://pixijs.com/assets/spritesheet/fighter.json");
@@ -359,6 +379,8 @@ function updateGameLoop() {
 
   const last = curvePoints[curvePoints.length - 1];
   const newX = last.x + 1;
+
+  background.tilePosition.x -= 0.5; // scroll speed (adjust to your taste)
 
   // Parabola mapped from bottom-left to top-right
   const progress = newX / app.screen.width; // 0 to 1
