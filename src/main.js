@@ -163,6 +163,7 @@ let countdown = 10;
 let roundTimer = null;
 let hasBetted = false;
 let userBalance = 1000;
+let bgAnimating = false;
 const userBalanceEl = document.getElementById("user-balance");
 
 function updateBalanceDisplay() {
@@ -236,7 +237,7 @@ function generateCrashMultiplier() {
 
 function startRound() {
   state = "running";
-
+  bgAnimating = true; // ✅ start background animation
   // Swap buttons
   betBtn.style.display = "none";
   cashoutBtn.style.display = "block";
@@ -263,6 +264,7 @@ function startRound() {
 }
 
 function endRound() {
+  bgAnimating = false; // ✅ stop background animation
   setTimeout(() => {
     state = "waiting";
     multiplier = 1;
@@ -485,4 +487,12 @@ function startCountdown() {
 }
 
 // Start game loop
-app.ticker.add(updateGameLoop);
+app.ticker.add(() => {
+  // Move the background horizontally
+  if (bgAnimating) background.tilePosition.x -= 0.5; // adjust speed here
+
+  // Or move vertically for a top-down effect
+  // background.tilePosition.y += 1;
+
+  updateGameLoop();
+});
