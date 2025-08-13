@@ -100,38 +100,49 @@ explosion.loop = false;
 explosion.visible = false;
 app.stage.addChild(explosion);
 
-// Load coin texture once (you can use any PNG coin asset)
-const coinTexture = await Assets.load("../public/assets/coin.png");
+// Create fullscreen PIXI app for coins
+const coinApp = new Application();
+await coinApp.init({
+  resizeTo: window,
+  backgroundAlpha: 0, // transparent background
+});
+document.body.appendChild(coinApp.canvas);
+coinApp.canvas.style.position = "fixed";
+coinApp.canvas.style.top = "0";
+coinApp.canvas.style.left = "0";
+coinApp.canvas.style.pointerEvents = "none"; // clicks go through
+
+// Load coin texture
+const coinTexture = await Assets.load("./public/assets/coin.png");
 const coins = [];
 
+// Spawn coins
 function spawnCoins(count = 100) {
   for (let i = 0; i < count; i++) {
     const coin = new Sprite(coinTexture);
     coin.anchor.set(0.5);
-    coin.x = Math.random() * app.screen.width;
-    coin.y = -50; // start above the screen
-    coin.scale.set(0.2 + Math.random() * 0.1);
-    coin.rotation = Math.random() * Math.PI * 2;
-    coin.vy = 2 + Math.random() * 3; // falling speed
-    coin.vx = (Math.random() - 0.5) * 2; // horizontal drift
-    coin.vr = (Math.random() - 0.5) * 0.1; // rotation speed
+    coin.x = Math.random() * window.innerWidth;
+    coin.y = -50;
+    coin.scale.set(0.25 + Math.random() * 0.1);
+    coin.vy = 2 + Math.random() * 3;
+    coin.vx = (Math.random() - 0.5) * 2;
     coins.push(coin);
-    app.stage.addChild(coin);
+    coinApp.stage.addChild(coin);
   }
 }
 
-function updateCoins() {
+// Animate coins
+coinApp.ticker.add(() => {
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
-    c.y += c.vy;
     c.x += c.vx;
-    c.rotation += c.vr;
-    if (c.y > app.screen.height + 50) {
-      app.stage.removeChild(c);
+    c.y += c.vy;
+    if (c.y > window.innerHeight) {
+      coinApp.stage.removeChild(c);
       coins.splice(i, 1);
     }
   }
-}
+});
 
 // Curve graphics
 const graphics = new Graphics();
@@ -328,7 +339,7 @@ cashoutBtn.onclick = () => {
   currentBalance += winnings;
   userBalanceEl.textContent = `$${currentBalance.toFixed(2)}`;
   bumpBalanceAnimation();
-  spawnCoins(25);
+  spawnCoins(50);
 
   rocket.visible = false;
   addMultiplierToHistory(multiplier);
@@ -447,8 +458,6 @@ function updateGameLoop() {
     if (Math.random() < 0.6) emitParticle();
     updateParticles();
   }
-
-  updateCoins(); // 🪙 keep coins falling
 }
 
 function startCountdown() {
