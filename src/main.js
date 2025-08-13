@@ -308,7 +308,6 @@ function placeBet() {
   setCashoutState(false);
 
   startScreen.style.display = "none";
-  startCountdown();
 }
 
 document.getElementById("place-bet").onclick = placeBet;
